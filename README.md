@@ -1,4 +1,4 @@
-# Capstone Project — Time Series Analysis and Stock Market Forecasting
+# Capstone Project 2026 - Time Series Analysis and Stock Market Forecasting
 ## Live Dashboard
 🔗 [View Dashboard](https://shritzb.github.io/iitg-tsa-capstone-2026)
 
