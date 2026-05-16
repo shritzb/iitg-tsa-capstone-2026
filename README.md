@@ -1,13 +1,17 @@
 # Capstone Project — Time Series Analysis and Stock Market Forecasting
-
 ## Live Dashboard
 🔗 [View Dashboard](https://shritzb.github.io/iitg-tsa-capstone-2026)
+
+---
 
 ## Overview
 
 This project was developed as part of a Time Series Analysis (TSA) capstone focused on stock market forecasting, volatility analysis, and portfolio construction using Python. The objective was to apply statistical forecasting techniques to real financial market data, evaluate prediction performance, and execute a live virtual portfolio using StockGro.
 
 The project combines forecasting models, volatility estimation, trend analysis, correlation-based diversification, and practical portfolio allocation strategies to simulate real-world financial decision-making.
+
+## Pipeline
+Data Fetching → Preprocessing → ARIMA Forecasting → Volatility Analysis → Portfolio Construction → Live Trading → Evaluation
 
 ---
 
@@ -151,6 +155,3 @@ The portfolio was executed using the StockGro virtual trading platform and monit
 
 # Author
 Shritama Bandyopadhyay
-
-## Pipeline
-Data Fetching → Preprocessing → ARIMA Forecasting → Volatility Analysis → Portfolio Construction → Live Trading → Evaluation
