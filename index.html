@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Time Series Analysis, Capstone Project 2026 — Portfolio Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+:root {
+  --bg:     #09111f;
+  --s1:     #0e1b2e;
+  --s2:     #152035;
+  --border: rgba(96,165,250,0.12);
+  --acc:    #60a5fa;
+  --acc2:   #34d399;
+  --acc3:   #fbbf24;
+  --acc4:   #a78bfa;
+  --acc5:   #67e8f9;
+  --up:     #34d399;
+  --dn:     #f87171;
+  --txt:    #e2e8f0;
+  --muted:  #64748b;
+  --mono:   'JetBrains Mono', monospace;
+  --sans:   'Inter', sans-serif;
+}
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--txt);font-family:var(--sans);font-size:14px;line-height:1.6;min-height:100vh}
+
+.wrap{max-width:1380px;margin:0 auto;padding:36px 28px}
+
+/* ── NAV ── */
+.nav{display:flex;justify-content:space-between;align-items:center;padding-bottom:28px;margin-bottom:36px;border-bottom:1px solid var(--border)}
+.nav-brand{font-size:12px;color:var(--muted);font-family:var(--mono);letter-spacing:.08em}
+.nav-title{font-size:13px;font-weight:700;color:var(--acc);letter-spacing:.05em;text-transform:uppercase}
+.nav-date{font-size:11px;color:var(--muted);font-family:var(--mono)}
+
+/* ── HERO ── */
+.hero{margin-bottom:40px}
+.hero-eyebrow{font-family:var(--mono);font-size:11px;color:var(--acc);letter-spacing:.15em;text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.hero-eyebrow::before{content:'';width:20px;height:1px;background:var(--acc)}
+.hero h1{font-size:clamp(30px,5vw,52px);font-weight:700;line-height:1.1;letter-spacing:-.02em;color:#fff;margin-bottom:8px}
+.hero h1 em{color:var(--acc);font-style:normal}
+.hero-sub{color:var(--muted);font-size:13px;max-width:600px}
+
+/* ── KPI GRID ── */
+.kpi-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:36px}
+.kpi{background:var(--s1);border:1px solid var(--border);border-radius:12px;padding:18px 16px;position:relative;overflow:hidden;transition:transform .2s,border-color .2s}
+.kpi:hover{transform:translateY(-2px);border-color:rgba(96,165,250,.3)}
+.kpi::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--kc,var(--acc))}
+.kpi-label{font-family:var(--mono);font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px}
+.kpi-val{font-size:22px;font-weight:700;color:var(--kc,var(--acc));line-height:1.1;margin-bottom:4px}
+.kpi-sub{font-size:11px;color:var(--muted)}
+
+/* ── SECTION LABEL ── */
+.sec{font-family:var(--mono);font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.12em;margin-bottom:14px;display:flex;align-items:center;gap:10px}
+.sec::after{content:'';flex:1;height:1px;background:var(--border)}
+
+/* ── CARDS ── */
+.card{background:var(--s1);border:1px solid var(--border);border-radius:14px;padding:22px;transition:border-color .2s}
+.card:hover{border-color:rgba(96,165,250,.25)}
+.card-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
+.card-title{font-size:13px;font-weight:600;color:var(--txt)}
+.card-tag{font-family:var(--mono);font-size:10px;color:var(--acc);background:rgba(96,165,250,.1);border:1px solid rgba(96,165,250,.2);padding:2px 8px;border-radius:4px}
+
+/* ── GRIDS ── */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;margin-bottom:20px}
+.g5{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:24px}
+.span2{grid-column:span 2}
+
+/* ── STOCK CARDS ── */
+.sc{background:var(--s1);border:1px solid var(--border);border-radius:12px;padding:16px;transition:all .2s}
+.sc:hover{transform:translateY(-3px);border-color:rgba(96,165,250,.3);box-shadow:0 8px 24px rgba(0,0,0,.3)}
+.sc-name{font-weight:700;font-size:15px;color:#fff;margin-bottom:2px}
+.sc-sector{font-family:var(--mono);font-size:10px;color:var(--muted);margin-bottom:12px;text-transform:uppercase;letter-spacing:.08em}
+.sc-row{display:flex;justify-content:space-between;margin-bottom:5px;font-size:12px}
+.sc-row .l{color:var(--muted)}
+.sc-row .v{font-family:var(--mono);font-weight:500}
+.sc-div{height:1px;background:var(--border);margin:10px 0}
+.sc-ret{font-size:22px;font-weight:700;color:var(--up);margin-bottom:6px}
+.up{color:var(--up)}.dn{color:var(--dn)}
+
+/* ── TABLE ── */
+.tbl{width:100%;border-collapse:collapse;font-size:12px}
+.tbl th{font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);padding:9px 12px;text-align:left;border-bottom:1px solid var(--border)}
+.tbl td{padding:11px 12px;border-bottom:1px solid rgba(96,165,250,.05);font-family:var(--mono)}
+.tbl tr:last-child td{border-bottom:none}
+.tbl tr:hover td{background:rgba(96,165,250,.04)}
+.tbl .tot td{color:var(--acc);font-weight:600;border-top:1px solid var(--border)}
+.ck{color:var(--up);font-size:13px}.xx{color:var(--dn);font-size:13px}
+.stk{color:#fff;font-weight:600}
+
+/* ── VOL BARS ── */
+.vb{display:flex;align-items:center;gap:12px;margin-bottom:13px}
+.vb-lbl{font-family:var(--mono);font-size:11px;color:var(--txt);width:90px;flex-shrink:0}
+.vb-track{flex:1;height:7px;background:var(--s2);border-radius:4px;overflow:hidden}
+.vb-fill{height:100%;border-radius:4px}
+.vb-num{font-family:var(--mono);font-size:10px;color:var(--muted);width:56px;text-align:right}
+
+/* ── HEATMAP ── */
+.hm{display:grid;gap:2px}
+.hm-cell{border-radius:4px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:11px;height:48px;transition:transform .15s;cursor:default}
+.hm-cell:hover{transform:scale(1.06);z-index:2}
+.hm-lbl{font-family:var(--mono);font-size:9px;color:var(--muted);display:flex;align-items:center;justify-content:center}
+
+/* ── MODEL ROWS ── */
+.mr{display:grid;grid-template-columns:130px 70px 70px 70px 1fr;gap:10px;align-items:center;padding:12px 0;border-bottom:1px solid var(--border)}
+.mr:last-child{border-bottom:none}
+.mr-name{font-weight:700;font-size:13px}
+.mr-v{font-family:var(--mono);font-size:11px;text-align:center;color:var(--muted)}
+.mr-v.good{color:var(--up)}
+.mr-v.warn{color:var(--acc3)}
+.mr-note{font-size:11px;color:var(--muted)}
+
+/* ── DIR NOTE ── */
+.dir-note{margin-top:14px;padding:12px 14px;background:var(--s2);border-radius:8px;border-left:3px solid var(--acc3);font-size:12px;color:var(--muted);line-height:1.7}
+.dir-note strong{color:var(--txt)}
+
+/* ── SUMMARY BAR ── */
+.sum-bar{display:flex;gap:28px;padding:14px 0;border-top:1px solid var(--border);margin-top:14px;flex-wrap:wrap}
+.sum-item{font-family:var(--mono);font-size:12px;color:var(--muted)}
+.sum-item strong{color:var(--txt)}
+
+/* ── FOOTER ── */
+.foot{margin-top:48px;padding-top:20px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;font-family:var(--mono);font-size:11px;color:var(--muted);flex-wrap:wrap;gap:8px}
+
+/* ── ANIMATIONS ── */
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+.kpi{animation:fadeUp .5s ease both}
+.kpi:nth-child(1){animation-delay:.05s}.kpi:nth-child(2){animation-delay:.10s}
+.kpi:nth-child(3){animation-delay:.15s}.kpi:nth-child(4){animation-delay:.20s}
+.kpi:nth-child(5){animation-delay:.25s}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<!-- NAV -->
+<nav class="nav">
+  <div class="nav-brand">Consulting &amp; Analytics Club · IIT Guwahati</div>
+  <div class="nav-title">TSA Capstone Project 2026</div>
+  <div class="nav-date">Trading Window: 14–15 May 2026</div>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-eyebrow">Time Series Analysis · StockGro NSE · ARIMA(5,1,2)</div>
+  <h1>Portfolio <em>Dashboard</em></h1>
+  <div class="hero-sub">Data-driven stock forecasting and live virtual trading using ARIMA time series models on 5 diversified NSE stocks.</div>
+</div>
+
+<!-- KPIs -->
+<div class="kpi-grid">
+  <div class="kpi" style="--kc:#34d399">
+    <div class="kpi-label">Net P&amp;L</div>
+    <div class="kpi-val">+₹12,029</div>
+    <div class="kpi-sub">After ₹998 transaction charges</div>
+  </div>
+  <div class="kpi" style="--kc:#60a5fa">
+    <div class="kpi-label">Net Return</div>
+    <div class="kpi-val">+1.20%</div>
+    <div class="kpi-sub">Over 2 trading days</div>
+  </div>
+  <div class="kpi" style="--kc:#fbbf24">
+    <div class="kpi-label">Capital Deployed</div>
+    <div class="kpi-val">₹9,97,634</div>
+    <div class="kpi-sub">Out of ₹10,00,000</div>
+  </div>
+  <div class="kpi" style="--kc:#a78bfa">
+    <div class="kpi-label">Stocks Profitable</div>
+    <div class="kpi-val">5 / 5</div>
+    <div class="kpi-sub">All positions in green</div>
+  </div>
+  <div class="kpi" style="--kc:#67e8f9">
+    <div class="kpi-label">Gross P&amp;L</div>
+    <div class="kpi-val">+₹13,027</div>
+    <div class="kpi-sub">Before transaction charges</div>
+  </div>
+</div>
+
+<!-- STOCK CARDS -->
+<div class="sec">Individual Stock Performance</div>
+<div class="g5" style="margin-bottom:32px">
+  <div class="sc">
+    <div class="sc-name">HDFCBANK</div><div class="sc-sector">Banking</div>
+    <div class="sc-row"><span class="l">Buy Price</span><span class="v">₹742.29</span></div>
+    <div class="sc-row"><span class="l">Day 2 Close</span><span class="v">₹762.33</span></div>
+    <div class="sc-row"><span class="l">Invested</span><span class="v">₹2,88,751</span></div>
+    <div class="sc-row"><span class="l">Qty</span><span class="v">389</span></div>
+    <div class="sc-div"></div>
+    <div class="sc-ret">+2.70%</div>
+    <div class="sc-row"><span class="l">P&amp;L</span><span class="v up">+₹7,796</span></div>
+  </div>
+  <div class="sc">
+    <div class="sc-name">TCS</div><div class="sc-sector">Information Tech.</div>
+    <div class="sc-row"><span class="l">Buy Price</span><span class="v">₹2,193.36</span></div>
+    <div class="sc-row"><span class="l">Day 2 Close</span><span class="v">₹2,220.01</span></div>
+    <div class="sc-row"><span class="l">Invested</span><span class="v">₹2,52,236</span></div>
+    <div class="sc-row"><span class="l">Qty</span><span class="v">115</span></div>
+    <div class="sc-div"></div>
+    <div class="sc-ret">+1.22%</div>
+    <div class="sc-row"><span class="l">P&amp;L</span><span class="v up">+₹3,065</span></div>
+  </div>
+  <div class="sc">
+    <div class="sc-name">HINDUNILVR</div><div class="sc-sector">FMCG</div>
+    <div class="sc-row"><span class="l">Buy Price</span><span class="v">₹2,243.61</span></div>
+    <div class="sc-row"><span class="l">Day 2 Close</span><span class="v">₹2,255.10</span></div>
+    <div class="sc-row"><span class="l">Invested</span><span class="v">₹2,24,361</span></div>
+    <div class="sc-row"><span class="l">Qty</span><span class="v">100</span></div>
+    <div class="sc-div"></div>
+    <div class="sc-ret">+0.51%</div>
+    <div class="sc-row"><span class="l">P&amp;L</span><span class="v up">+₹1,149</span></div>
+  </div>
+  <div class="sc">
+    <div class="sc-name">M&amp;M</div><div class="sc-sector">Automobiles</div>
+    <div class="sc-row"><span class="l">Buy Price</span><span class="v">₹3,081.65</span></div>
+    <div class="sc-row"><span class="l">Day 2 Close</span><span class="v">₹3,087.54</span></div>
+    <div class="sc-row"><span class="l">Invested</span><span class="v">₹1,84,899</span></div>
+    <div class="sc-row"><span class="l">Qty</span><span class="v">60</span></div>
+    <div class="sc-div"></div>
+    <div class="sc-ret">+0.19%</div>
+    <div class="sc-row"><span class="l">P&amp;L</span><span class="v up">+₹353</span></div>
+  </div>
+  <div class="sc">
+    <div class="sc-name">SUNPHARMA</div><div class="sc-sector">Pharmaceuticals</div>
+    <div class="sc-row"><span class="l">Buy Price</span><span class="v">₹1,822.55</span></div>
+    <div class="sc-row"><span class="l">Day 2 Close</span><span class="v">₹1,848.08</span></div>
+    <div class="sc-row"><span class="l">Invested</span><span class="v">₹47,386</span></div>
+    <div class="sc-row"><span class="l">Qty</span><span class="v">26</span></div>
+    <div class="sc-div"></div>
+    <div class="sc-ret">+1.40%</div>
+    <div class="sc-row"><span class="l">P&amp;L</span><span class="v up">+₹664</span></div>
+  </div>
+</div>
+
+<!-- PIE + PRED vs ACTUAL -->
+<div class="sec">Portfolio &amp; Forecasting</div>
+<div class="g2" style="margin-bottom:20px">
+  <div class="card">
+    <div class="card-hdr"><div class="card-title">Portfolio Allocation</div><div class="card-tag">₹9,97,634 deployed</div></div>
+    <div style="height:260px;position:relative"><canvas id="pieC"></canvas></div>
+  </div>
+  <div class="card">
+    <div class="card-hdr"><div class="card-title">Predicted vs Actual — Day 2 Close</div><div class="card-tag">ARIMA(5,1,2)</div></div>
+    <div style="height:260px;position:relative"><canvas id="paC"></canvas></div>
+  </div>
+</div>
+
+<!-- P&L + VOLATILITY -->
+<div class="g2" style="margin-bottom:20px">
+  <div class="card">
+    <div class="card-hdr"><div class="card-title">P&amp;L by Stock</div><div class="card-tag">Gross</div></div>
+    <div style="height:220px;position:relative"><canvas id="pnlC"></canvas></div>
+  </div>
+  <div class="card">
+    <div class="card-hdr"><div class="card-title">Rolling Volatility Profile</div><div class="card-tag">20-day avg log return std dev</div></div>
+    <div style="padding-top:6px">
+      <div class="vb"><div class="vb-lbl">HDFCBANK</div><div class="vb-track"><div class="vb-fill" style="width:36%;background:#60a5fa"></div></div><div class="vb-num">Lowest</div></div>
+      <div class="vb"><div class="vb-lbl">HINDUNILVR</div><div class="vb-track"><div class="vb-fill" style="width:44%;background:#67e8f9"></div></div><div class="vb-num">Low</div></div>
+      <div class="vb"><div class="vb-lbl">TCS</div><div class="vb-track"><div class="vb-fill" style="width:58%;background:#fbbf24"></div></div><div class="vb-num">Moderate</div></div>
+      <div class="vb"><div class="vb-lbl">SUNPHARMA</div><div class="vb-track"><div class="vb-fill" style="width:65%;background:#fbbf24"></div></div><div class="vb-num">Moderate</div></div>
+      <div class="vb"><div class="vb-lbl">M&amp;M</div><div class="vb-track"><div class="vb-fill" style="width:86%;background:#f87171"></div></div><div class="vb-num">Highest</div></div>
+      <div style="margin-top:16px;padding:10px 12px;background:var(--s2);border-radius:8px;font-size:12px;color:var(--muted);line-height:1.8">
+        Volatility-Aware weights (wᵢ = 1/σᵢ normalised):<br>
+        Higher volatility → smaller allocation. HDFCBANK (lowest vol) received the largest share at 29%.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CORRELATION + COMPARISON TABLE -->
+<div class="g2" style="margin-bottom:20px">
+  <div class="card">
+    <div class="card-hdr"><div class="card-title">Correlation Matrix — Log Returns</div><div class="card-tag">2021–2025</div></div>
+    <div id="hm"></div>
+  </div>
+  <div class="card">
+    <div class="card-hdr"><div class="card-title">Predicted vs Actual — Full Comparison</div><div class="card-tag">Day 1 &amp; Day 2</div></div>
+    <table class="tbl">
+      <thead><tr><th>Stock</th><th>D1 Pred</th><th>D1 Actual</th><th>D2 Pred</th><th>D2 Actual</th><th>Dir?</th></tr></thead>
+      <tbody>
+        <tr><td class="stk">HDFCBANK</td><td>~990</td><td>759.28</td><td>~990</td><td>762.33</td><td><span class="xx">✗</span></td></tr>
+        <tr><td class="stk">TCS</td><td>~3,194</td><td>2,204</td><td>~3,194</td><td>2,220</td><td><span class="ck">✓</span></td></tr>
+        <tr><td class="stk">HINDUNILVR</td><td>~2,293</td><td>2,227</td><td>~2,293</td><td>2,255</td><td><span class="ck">✓</span></td></tr>
+        <tr><td class="stk">SUNPHARMA</td><td>~1,708</td><td>1,858</td><td>~1,708</td><td>1,848</td><td><span class="xx">✗</span></td></tr>
+        <tr><td class="stk">M&amp;M</td><td>~3,660</td><td>3,143</td><td>~3,660</td><td>3,088</td><td><span class="xx">✗</span></td></tr>
+      </tbody>
+    </table>
+    <div class="dir-note">
+      <strong>Note on directional accuracy:</strong> Model directional accuracy (Day1 close → Day2 close): 3/5 (60%).
+Correct: TCS ✓, HINDUNILVR ✓, SUNPHARMA ✓
+Incorrect: HDFCBANK, M&M
+All 5 portfolio positions profitable — P&L is measured from buy price, not Day1 close.
+    </div>
+  </div>
+</div>
+
+<!-- EXECUTION TABLE -->
+<div class="sec" style="margin-top:8px">StockGro Execution Summary</div>
+<div class="card" style="margin-bottom:20px">
+  <table class="tbl">
+    <thead><tr><th>Stock</th><th>Sector</th><th>Qty</th><th>Avg Buy (₹)</th><th>Purchase Value (₹)</th><th>Weight</th><th>Day 2 Close (₹)</th><th>Return %</th><th>P&amp;L (₹)</th></tr></thead>
+    <tbody>
+      <tr><td class="stk">HDFCBANK</td><td style="color:var(--muted)">Banking</td><td>389</td><td>742.29</td><td>2,88,750.81</td><td>28.9%</td><td>762.33</td><td class="up">+2.70%</td><td class="up">+7,795.56</td></tr>
+      <tr><td class="stk">TCS</td><td style="color:var(--muted)">IT</td><td>115</td><td>2,193.36</td><td>2,52,236.40</td><td>25.3%</td><td>2,220.01</td><td class="up">+1.22%</td><td class="up">+3,064.75</td></tr>
+      <tr><td class="stk">HINDUNILVR</td><td style="color:var(--muted)">FMCG</td><td>100</td><td>2,243.61</td><td>2,24,361.00</td><td>22.5%</td><td>2,255.10</td><td class="up">+0.51%</td><td class="up">+1,149.00</td></tr>
+      <tr><td class="stk">M&amp;M</td><td style="color:var(--muted)">Auto</td><td>60</td><td>3,081.65</td><td>1,84,899.00</td><td>18.5%</td><td>3,087.54</td><td class="up">+0.19%</td><td class="up">+353.40</td></tr>
+      <tr><td class="stk">SUNPHARMA</td><td style="color:var(--muted)">Pharma</td><td>26</td><td>1,822.55</td><td>47,386.30</td><td>4.75%</td><td>1,848.08</td><td class="up">+1.40%</td><td class="up">+663.78</td></tr>
+      <tr class="tot"><td>TOTAL</td><td></td><td>690</td><td>—</td><td>9,97,633.51</td><td>100%</td><td>—</td><td>+1.31% gross</td><td>+13,026.49</td></tr>
+    </tbody>
+  </table>
+  <div class="sum-bar">
+    <div class="sum-item">Transaction Charges (0.1%): <strong style="color:var(--dn)">−₹997.63</strong></div>
+    <div class="sum-item">Net P&amp;L: <strong style="color:var(--up)">+₹12,028.86</strong></div>
+    <div class="sum-item">Net Return: <strong style="color:var(--up)">+1.20%</strong></div>
+    <div class="sum-item">Positions Profitable: <strong style="color:var(--up)">5 / 5</strong></div>
+  </div>
+</div>
+
+<!-- MODEL COMPARISON -->
+<div class="sec">Model Evaluation</div>
+<div class="card" style="margin-bottom:40px">
+  <div style="display:grid;grid-template-columns:130px 70px 70px 70px 1fr;gap:10px;padding-bottom:10px;border-bottom:1px solid var(--border);margin-bottom:2px">
+    <div style="font-family:var(--mono);font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em">Model</div>
+    <div style="font-family:var(--mono);font-size:10px;color:var(--muted);text-align:center;text-transform:uppercase">RMSE</div>
+    <div style="font-family:var(--mono);font-size:10px;color:var(--muted);text-align:center;text-transform:uppercase">MAPE</div>
+    <div style="font-family:var(--mono);font-size:10px;color:var(--muted);text-align:center;text-transform:uppercase">Dir. Acc</div>
+    <div style="font-family:var(--mono);font-size:10px;color:var(--muted);text-transform:uppercase">Notes</div>
+  </div>
+  <div class="mr">
+    <div class="mr-name" style="color:var(--acc)">ARIMA(5,1,2)</div>
+    <div class="mr-v good">Low–Mod</div><div class="mr-v good">Low–Mod</div><div class="mr-v warn">Moderate</div>
+    <div class="mr-note">✅ Fully implemented · AIC/BIC grid search · Applied to all 5 stocks · Portfolio decisions based on this model</div>
+  </div>
+  <div class="mr">
+    <div class="mr-name" style="color:var(--muted)">LSTM / GRU</div>
+    <div class="mr-v">—</div><div class="mr-v">—</div><div class="mr-v">—</div>
+    <div class="mr-note">Conceptually assessed · Not implemented · Requires large data + heavy hyperparameter tuning</div>
+  </div>
+  <div class="mr">
+    <div class="mr-name" style="color:var(--muted)">Prophet</div>
+    <div class="mr-v">—</div><div class="mr-v">—</div><div class="mr-v">—</div>
+    <div class="mr-note">Conceptually assessed · Not implemented · Better suited to business time series than volatile financial data</div>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<div class="foot">
+  <div>TSA Capstone Project 2026 · Consulting &amp; Analytics Club · IIT Guwahati</div>
+  <div>Model: ARIMA(5,1,2) · Data: Yahoo Finance (yfinance) · Platform: StockGro NSE Live</div>
+</div>
+
+</div><!-- /wrap -->
+
+<script>
+Chart.defaults.color='#64748b';
+Chart.defaults.font.family="'JetBrains Mono',monospace";
+Chart.defaults.font.size=11;
+
+// PIE
+new Chart(document.getElementById('pieC'),{
+  type:'doughnut',
+  data:{
+    labels:['HDFCBANK (Banking)','TCS (IT)','HINDUNILVR (FMCG)','M&M (Auto)','SUNPHARMA (Pharma)'],
+    datasets:[{
+      data:[288750.81,252236.40,224361.00,184899.00,47386.30],
+      backgroundColor:['#60a5fa','#34d399','#fbbf24','#a78bfa','#67e8f9'],
+      borderColor:'#0e1b2e',borderWidth:3,hoverOffset:8
+    }]
+  },
+  options:{
+    responsive:true,maintainAspectRatio:false,cutout:'62%',
+    plugins:{
+      legend:{position:'right',labels:{boxWidth:10,padding:10,font:{size:11},color:'#94a3b8'}},
+      tooltip:{callbacks:{label:c=>` ₹${c.parsed.toLocaleString('en-IN')} (${(c.parsed/997633.51*100).toFixed(1)}%)`}}
+    }
+  }
+});
+
+// PRED vs ACTUAL
+new Chart(document.getElementById('paC'),{
+  type:'bar',
+  data:{
+    labels:['HDFCBANK','TCS','HINDUNILVR','SUNPHARMA','M&M'],
+    datasets:[
+      {label:'Predicted (₹)',data:[990,3194,2293,1708,3660],backgroundColor:'rgba(96,165,250,0.55)',borderColor:'#60a5fa',borderWidth:1,borderRadius:4},
+      {label:'Actual Day 2 (₹)',data:[762.33,2220.01,2255.10,1848.08,3087.54],backgroundColor:'rgba(52,211,153,0.55)',borderColor:'#34d399',borderWidth:1,borderRadius:4}
+    ]
+  },
+  options:{
+    responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{labels:{color:'#94a3b8',boxWidth:10}}},
+    scales:{
+      x:{grid:{color:'rgba(96,165,250,0.05)'},ticks:{color:'#94a3b8'}},
+      y:{grid:{color:'rgba(96,165,250,0.05)'},ticks:{color:'#94a3b8',callback:v=>'₹'+v.toLocaleString('en-IN')}}
+    }
+  }
+});
+
+// P&L
+new Chart(document.getElementById('pnlC'),{
+  type:'bar',
+  data:{
+    labels:['HDFCBANK','TCS','HINDUNILVR','SUNPHARMA','M&M'],
+    datasets:[{
+      label:'P&L (₹)',
+      data:[7795.56,3064.75,1149.00,663.78,353.40],
+      backgroundColor:['#60a5fa','#34d399','#fbbf24','#67e8f9','#a78bfa'],
+      borderRadius:6,borderSkipped:false
+    }]
+  },
+  options:{
+    responsive:true,maintainAspectRatio:false,indexAxis:'y',
+    plugins:{legend:{display:false}},
+    scales:{
+      x:{grid:{color:'rgba(96,165,250,0.05)'},ticks:{color:'#94a3b8',callback:v=>'₹'+v.toLocaleString('en-IN')}},
+      y:{grid:{color:'rgba(96,165,250,0.05)'},ticks:{color:'#94a3b8'}}
+    }
+  }
+});
+
+// HEATMAP
+const stocks=['HDFCBANK','TCS','HINDUNILVR','SUNPHARMA','M&M'];
+const corr=[[1.00,0.41,0.28,0.31,0.38],[0.41,1.00,0.33,0.35,0.44],[0.28,0.33,1.00,0.29,0.25],[0.31,0.35,0.29,1.00,0.36],[0.38,0.44,0.25,0.36,1.00]];
+function cc(v){
+  if(v>=0.9)return{bg:'#1e3a5f',txt:'#e2e8f0'};
+  if(v>=0.6)return{bg:'#1d4ed8',txt:'#e2e8f0'};
+  if(v>=0.4)return{bg:'rgba(96,165,250,0.45)',txt:'#e2e8f0'};
+  return{bg:'rgba(96,165,250,0.15)',txt:'#94a3b8'};
+}
+const hm=document.getElementById('hm');
+const g=document.createElement('div');
+g.className='hm';
+g.style.gridTemplateColumns=`70px repeat(${stocks.length},1fr)`;
+// header
+const bl0=document.createElement('div');bl0.className='hm-lbl';g.appendChild(bl0);
+stocks.forEach(s=>{const d=document.createElement('div');d.className='hm-lbl';d.textContent=s.length>7?s.slice(0,6)+'…':s;d.style.fontSize='9px';g.appendChild(d);});
+// rows
+stocks.forEach((rs,i)=>{
+  const rl=document.createElement('div');rl.className='hm-lbl';rl.style.justifyContent='flex-end';rl.style.paddingRight='6px';rl.style.fontSize='10px';rl.textContent=rs.length>7?rs.slice(0,6):rs;g.appendChild(rl);
+  stocks.forEach((_,j)=>{
+    const v=corr[i][j];const c=cc(v);
+    const cell=document.createElement('div');cell.className='hm-cell';cell.style.background=c.bg;cell.style.color=c.txt;cell.textContent=v.toFixed(2);
+    g.appendChild(cell);
+  });
+});
+hm.appendChild(g);
+</script>
+</body>
+</html>
